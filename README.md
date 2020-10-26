@@ -1,2 +1,3 @@
 # r2m
-Tool for moving relational entities to MarkLogic
+
+`./gradlew r2m:run --args='-db jdbc:h2:./data/h2/client -jc ./config/clientConfig.json -mi ./config/clientInsertConfig.json -mc ./marklogicConfiguration.json'`

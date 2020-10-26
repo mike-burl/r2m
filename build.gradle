@@ -1,0 +1,70 @@
+plugins {
+	id "java"
+	id "application"
+
+	id 'net.saliman.properties'
+	id "com.marklogic.ml-gradle"
+
+	// for MarkLogic DataServices
+	id 'com.marklogic.ml-development-tools'
+}
+
+dependencies {
+	// Core dependencies needed for using Spring Batch, Spring JDBC, and marklogic-spring-batch
+        compile fileTree (dir: "/code/nm-hsd-dhf/offline-repository/com/oracle/ojdbc", includes:['*.jar'])
+	implementation "com.marklogic:spring-batch-rdbms:1.4.2"
+	implementation "com.fasterxml.jackson.core:jackson-databind:2.9.5"
+
+	implementation "commons-cli:commons-cli:1.4"
+
+	// FSnow: tried using latest (5.2.0) but that requires Java 9
+	implementation group: 'com.marklogic', name: 'marklogic-client-api', version: '5.2.0'
+
+	// Forcing Spring to use logback instead of commons-logging
+	//runtimeOnly "ch.qos.logback:logback-classic:1.1.8"
+	//runtimeOnly group: "org.slf4j", name: "jcl-over-slf4j", version: "1.7.22"
+	//runtimeOnly group: "org.slf4j", name: "slf4j-api", version: "1.7.22"
+
+
+	// Using H2 as a sample database; can pull its JDBC driver from a Maven repository
+	runtimeOnly "com.h2database:h2:1.4.200"
+        // https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc
+        runtimeOnly 'com.microsoft.sqlserver:mssql-jdbc:8.4.0.jre8'
+//        runtimeOnly 'com.oracle.ojdbc:ojdbc:ojdbc7'
+	// Can reference a local JDBC driver like this (Oracle, along with others, do not publish their JDBC driver to a public repo)
+	// runtimeOnly files("./path/to/ojdbc-6.jar")
+}
+
+application {
+	mainClass = "com.marklogic.r2m.Main"
+}
+
+// this creates a fat jar that is runnable
+jar {
+    manifest {
+        attributes "Main-Class": "com.marklogic.r2m.Main"
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+// some default values for running the jar
+// invoke from the nm-hsd-dhf dir via:
+// ./gradlew r2m:doIt
+task doIt(type: JavaExec) {
+	description = "Run this thing"
+	classpath = sourceSets.main.runtimeClasspath
+	main = "com.marklogic.r2m.Main"
+	args = [
+		"-db",
+		"jdbc:h2:file:./data/h2/diagRef",
+		"-jc",
+		"./config/diagRefConfig.json",
+		"-mi",
+		"./config/diagRefInsertConfig.json",
+		"-mc",
+		"./marklogicConfiguration.json"
+	]
+}
